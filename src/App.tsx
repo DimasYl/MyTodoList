@@ -15,47 +15,37 @@ function App() {
         {id: v1(), title: 'JS', isDone: true},
         {id: v1(), title: 'ReactJS', isDone: false},
         {id: v1(), title: 'Rest Api', isDone: false},
-        {id: v1(), title: 'GraphQL', isDone: false},
+        {id: v1(), title: 'GraphQL', isDone: false}
     ])
     const [filter, setFilter] = useState<FilterValueType>('all')
 
-    function removeTask(taskID: string) { //2
-        let newState = tasks.filter(t => t.id !== taskID)
-        setTasks(newState)
+    function removeTask(taskID: string){
+        let newTask = tasks.filter(t => t.id !== taskID)
+        setTasks(newTask)
     }
+
     function changeFilter(newFilterValue: FilterValueType) {
         setFilter(newFilterValue)
     }
-    function addTask(taskTitle: string) {
-        // const newTask: TaskType = {
-        //     id: v1(),
-        //     title: taskTitle,
-        //     isDone: false
-        // }
-        // const upDatedTasks = [newTask, ...tasks]
-        // setTasks(upDatedTasks
-        //более сокращенная форма
-        setTasks([{
-            id: v1(),
-            title: taskTitle,
-            isDone: false
-        }, ...tasks])
+
+    function addTask(taskTitle: string){
+        let newTask = {
+            id: v1(),title: taskTitle, isDone: false
+        }
+        setTasks([newTask,...tasks])
     }
-    function changeStatus(taskID: string, isDone: boolean){
-        //     const task: TaskType|undefined = tasks.find(t=> t.id ===taskID )
-        // //false - '', NaN, undefined, 0, -0
-        // if(task){
-        //    task.isDone = isDone
-        //     setTasks([...tasks])
-        const newTask = tasks.map(t=>{
-            if(t.id === taskID){
+
+    function changeStatus(taskID: string, isDone: boolean) {
+
+        const newTask = tasks.map(t => {
+            if (t.id === taskID) {
                 return {...t, isDone: isDone}
-            }else{
+            } else {
                 return t
             }
         })
         setTasks(newTask)
-        }
+    }
 
 
     let taskForTodolist = tasks
