@@ -56,6 +56,11 @@ function App() {
         taskForTodolist = tasks.filter(t => t.isDone)
     }
 
+    let todolists = [
+        {id: v1(), title:'what to learn', filter: 'active'},
+        {id: v1(), title:'what to buy', filter: 'completed'}
+    ]
+
     return (
         <div className="App">
             <TodoList
