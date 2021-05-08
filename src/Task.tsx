@@ -4,7 +4,7 @@ import {EditableSpan} from "./EditableSpan";
 import {Delete} from "@material-ui/icons";
 import {TaskType} from "./TodoList";
 
-type TaskPropsType = {
+export type TaskPropsType = {
     todolistId: string
     removeTask: (taskID: string, todolistID: string) => void
     changeStatus: (taskID: string, isDone: boolean, todolistID: string) => void
@@ -12,6 +12,8 @@ type TaskPropsType = {
     task: TaskType
 }
 export const Task = React.memo((props: TaskPropsType) => {
+    console.log('Task')
+
     const removeTask = () => {
         props.removeTask(props.task.id, props.todolistId)
     }
