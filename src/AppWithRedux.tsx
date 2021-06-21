@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
+import React, {useCallback, useEffect} from 'react';
 import './App.css';
-import {TodoList} from "./TodoList";
+import {TaskType, TodoList} from "./TodoList";
 import {AddItemForm} from "./AddItemForm";
 import {AppBar, Button, Container, Grid, IconButton, Paper, Toolbar, Typography} from "@material-ui/core";
 import {Menu} from "@material-ui/icons";
@@ -8,21 +8,37 @@ import {
     addTodolistAC,
     changeTodolistFilterAC,
     changeTodolistTitleAC,
+    fetchTodolistTC,
     removeTodolistAC
 } from "./state/todolists-reducer";
-import {addTaskAC, changeTaskStatusAC, changeTaskTitleAC, removeTaskAC} from "./state/tasks-reducer";
+import {addTaskTC, changeTaskTitleAC, removeTaskTC, TaskStatuses, updateTaskStatusTC} from "./state/tasks-reducer";
 import {useDispatch, useSelector} from "react-redux";
-import {TasksStateType, TodolistType} from "./App";
 import {AppRootStateType} from "./state/store";
 
+
+export type TasksStateType = {
+    [key: string]: Array<TaskType>
+}
+
+export type TodolistType = {
+    id: string
+    title: string
+    filter: FilterValueType
+}
 
 export type FilterValueType = 'all' | 'active' | 'completed'
 
 
 const AppWithRedux = React.memo(() => {
+
+    useEffect(()=>{
+        dispatch(fetchTodolistTC())
+    },[])
+
     console.log('AppWithRedux called')
 
     const todolists = useSelector<AppRootStateType, Array<TodolistType>>(state => state.todolists)
+    // @ts-ignore
     const tasks = useSelector<AppRootStateType, TasksStateType>(state => state.tasks)
     const dispatch = useDispatch()
 
@@ -41,7 +57,7 @@ const AppWithRedux = React.memo(() => {
     },[])
 
     const removeTask = useCallback((taskID: string, todolistID: string) => {
-        dispatch(removeTaskAC(taskID, todolistID))
+            dispatch(removeTaskTC(taskID, todolistID))
     },[])
 
     const changeFilter = useCallback((newFilterValue: FilterValueType, todolistID: string) => {
@@ -49,12 +65,15 @@ const AppWithRedux = React.memo(() => {
     },[])
 
     const addTask = useCallback((taskTitle: string, todolistID: string) => {
-        dispatch(addTaskAC(taskTitle, todolistID))
+        dispatch(addTaskTC(todolistID, taskTitle))
     },[])
 
-    const changeStatus = useCallback((taskID: string, isDone: boolean, todolistID: string) => {
-        dispatch(changeTaskStatusAC(taskID, isDone, todolistID))
-    },[])
+    const changeStatus = useCallback(function (taskId: string, status: TaskStatuses, todolistId: string) {
+        dispatch(updateTaskStatusTC(taskId, status, todolistId))
+
+        // const action = changeTaskStatusAC(id, status, todolistId);
+        // dispatch(action);
+    }, []);
 
     const changeTaskTitle = useCallback((taskID: string, newTitle: string, todolistID: string) => {
         dispatch(changeTaskTitleAC(taskID, newTitle, todolistID))
@@ -92,7 +111,7 @@ const AppWithRedux = React.memo(() => {
                                         tasks={taskForTodolist}
                                         addTask={addTask}
                                         removeTask={removeTask}
-                                        changeStatus={changeStatus}
+                                        changeTaskStatus={changeStatus}
                                         changeFilter={changeFilter}
                                         changeTaskTitle={changeTaskTitle}
                                         changeTodolistTitle={changeTodolistTitle}
