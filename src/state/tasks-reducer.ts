@@ -2,6 +2,7 @@ import {AddTodolistActionType, RemoveTodolistActionType, SetTodolistActionType} 
 import {Dispatch} from "redux";
 import {taskApi, UpdateTaskModelType} from "../api/tasks-api";
 import {AppRootStateType} from "./store";
+import {setAppErrorAC, SetAppErrorActionType, setAppStatusAC, SetAppStatusActionType} from "../app/app-reducer";
 
 export type RemoveTaskActionType = {
     type: 'REMOVE-TASK'
@@ -10,7 +11,7 @@ export type RemoveTaskActionType = {
 }
 export type AddTaskActionType = {
     type: 'ADD-TASK'
-   task: TaskType
+    task: TaskType
 }
 export type ChangeTaskStatusActionType = {
     type: 'CHANGE-TASK-STATUS'
@@ -27,8 +28,8 @@ export type ChangeTaskTitleActionType = {
 type ActionType = RemoveTaskActionType | AddTaskActionType
     | ChangeTaskStatusActionType | ChangeTaskTitleActionType
     | AddTodolistActionType | RemoveTodolistActionType
-    | SetTodolistActionType
-    | SetTaskActionType
+    | SetTodolistActionType | SetTaskActionType
+    | SetAppStatusActionType | SetAppErrorActionType
 
 export enum TaskStatuses {
     New = 0,
@@ -36,6 +37,7 @@ export enum TaskStatuses {
     Completed = 2,
     Draft = 3
 }
+
 export enum TaskPriorities {
     Low = 0,
     Middle = 1,
@@ -66,7 +68,7 @@ const initialState: TasksStateType = {}
 
 export const tasksReducer = (state: TasksStateType = initialState, action: ActionType): TasksStateType => {
     switch (action.type) {
-        case "SET-TASKS":{
+        case "SET-TASKS": {
             let stateCopy = {...state}
             stateCopy[action.todolistId] = action.tasks
             return stateCopy
@@ -92,7 +94,7 @@ export const tasksReducer = (state: TasksStateType = initialState, action: Actio
             //         startDate: '', deadline: '', addedDate: '', order: 0, priority: TaskPriorities.Low}
             // stateCopy[action.todolistId] = [newTask, ...tasks]
             const tasks = stateCopy[action.task.todoListId]
-            const newTask = [action.task, ...tasks ]
+            const newTask = [action.task, ...tasks]
             stateCopy[action.task.todoListId] = newTask
             return stateCopy
         }
@@ -145,42 +147,67 @@ export const setTasksAC = (tasks: Array<TaskType>, todolistId: string) => {
 export type SetTaskActionType = ReturnType<typeof setTasksAC>
 
 
-export const fetchTasksTC = (todolistId: string) => (dispatch: Dispatch) => {
+export const fetchTasksTC = (todolistId: string) => (dispatch: Dispatch<ActionType>) => {
+    dispatch(setAppStatusAC('loading'))
     taskApi.getTask(todolistId)
-        .then((res)=>{
+        .then((res) => {
             const tasks = res.data.items
             // @ts-ignore
             dispatch(setTasksAC(tasks, todolistId))
+            dispatch(setAppStatusAC('succeeded'))
         })
 }
 
-export const removeTaskTC = (taskID: string, todolistID: string) => (dispatch: Dispatch) => {
+export const removeTaskTC = (taskID: string, todolistID: string) => (dispatch: Dispatch<ActionType>) => {
+    dispatch(setAppStatusAC('loading'))
     taskApi.deleteTask(todolistID, taskID)
-        .then((res)=> {
-            dispatch(removeTaskAC(taskID, todolistID))
+        .then((res) => {
+            if (res.data.resultCode === 0) {
+                dispatch(removeTaskAC(taskID, todolistID))
+                dispatch(setAppStatusAC('succeeded'))
+            } else {
+                if (res.data.messages.length) {
+                    dispatch(setAppErrorAC(res.data.messages[0]))
+                } else {
+                    dispatch(setAppErrorAC('Some error'))
+                }
+                dispatch(setAppStatusAC('failed'))
+            }
         })
 }
 
-export const addTaskTC = (todolistId: string, title: string) => (dispatch: Dispatch) => {
+export const addTaskTC = (todolistId: string, title: string) => (dispatch: Dispatch<ActionType>) => {
+    dispatch(setAppStatusAC('loading'))
     taskApi.createTask(todolistId, title)
-        .then((res)=> {
-            let task = res.data.data.item
-            // @ts-ignore
-            dispatch(addTaskAC(task))
+        .then((res) => {
+            if (res.data.resultCode === 0) {
+                let task = res.data.data.item
+                // @ts-ignore
+                dispatch(addTaskAC(task))
+                dispatch(setAppStatusAC('succeeded'))
+            } else {
+                if (res.data.messages.length) {
+                    dispatch(setAppErrorAC(res.data.messages[0]))
+                } else {
+                    dispatch(setAppErrorAC('Some error'))
+                }
+                dispatch(setAppStatusAC('failed'))
+            }
+
         })
 }
 
-export const updateTaskStatusTC = (taskId: string, status: TaskStatuses, todolistId: string) => (dispatch: Dispatch, getState: () => AppRootStateType) => {
+export const updateTaskStatusTC = (taskId: string, status: TaskStatuses, todolistId: string) => (dispatch: Dispatch<ActionType>, getState: () => AppRootStateType) => {
     const state = getState()
 
     const allTasks = state.tasks
     const tasksForCurrentTodo = allTasks[todolistId]
 
-    let updateTask = tasksForCurrentTodo.find(tl=>{
+    let updateTask = tasksForCurrentTodo.find(tl => {
         return tl.id === taskId
     })
 
-    if(updateTask) {
+    if (updateTask) {
 
         const model: UpdateTaskModelType = {
             title: updateTask.title,
@@ -193,11 +220,21 @@ export const updateTaskStatusTC = (taskId: string, status: TaskStatuses, todolis
 
         //есть проще запись рабочая
         // const model = {...updateTask, status}
-
+        dispatch(setAppStatusAC('loading'))
         taskApi.updateTask(todolistId, taskId, model)
             .then((res) => {
-                const newTask = res.data.data.item
-                dispatch(changeTaskStatusAC(newTask.id, newTask.status, newTask.todoListId))
+                if (res.data.resultCode === 0) {
+                    const newTask = res.data.data.item
+                    dispatch(changeTaskStatusAC(newTask.id, newTask.status, newTask.todoListId))
+                    dispatch(setAppStatusAC('succeeded'))
+                } else {
+                    if (res.data.messages.length) {
+                        dispatch(setAppErrorAC(res.data.messages[0]))
+                    } else {
+                        dispatch(setAppErrorAC('Some error'))
+                    }
+                    dispatch(setAppStatusAC('failed'))
+                }
             })
     }
 }

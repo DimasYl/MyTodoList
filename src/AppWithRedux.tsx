@@ -2,18 +2,30 @@ import React, {useCallback, useEffect} from 'react';
 import './App.css';
 import {TaskType, TodoList} from "./TodoList";
 import {AddItemForm} from "./AddItemForm";
-import {AppBar, Button, Container, Grid, IconButton, Paper, Toolbar, Typography} from "@material-ui/core";
+import {
+    AppBar,
+    Button,
+    Container,
+    Grid,
+    IconButton,
+    LinearProgress,
+    Paper,
+    Toolbar,
+    Typography
+} from "@material-ui/core";
 import {Menu} from "@material-ui/icons";
 import {
     addTodolistTC,
     changeTodolistFilterAC,
     fetchTodolistTC,
-    removeTodolistTC,
+    removeTodolistTC, TodolistDomainType,
     updateTodolistTitleTC
 } from "./state/todolists-reducer";
 import {addTaskTC, changeTaskTitleAC, removeTaskTC, TaskStatuses, updateTaskStatusTC} from "./state/tasks-reducer";
 import {useDispatch, useSelector} from "react-redux";
 import {AppRootStateType} from "./state/store";
+import {RequestStatusType} from "./app/app-reducer";
+import {ErrorSnackbar} from "./ErrorSnackbar/ErrorSnackbar";
 
 
 export type TasksStateType = {
@@ -37,9 +49,9 @@ const AppWithRedux = React.memo(() => {
 
     console.log('AppWithRedux called')
 
-    const todolists = useSelector<AppRootStateType, Array<TodolistType>>(state => state.todolists)
-    // @ts-ignore
+    const todolists = useSelector<AppRootStateType, Array<TodolistDomainType>>(state => state.todolists)
     const tasks = useSelector<AppRootStateType, TasksStateType>(state => state.tasks)
+    const status = useSelector<AppRootStateType, RequestStatusType>(state => state.app.status)
     const dispatch = useDispatch()
 
 
@@ -81,6 +93,7 @@ const AppWithRedux = React.memo(() => {
 
     return (
         <div className="App">
+            <ErrorSnackbar/>
             <AppBar position={"static"}>
                 <Toolbar>
                     <IconButton edge='start' color={"inherit"} aria-label={'menu'}>
@@ -91,6 +104,7 @@ const AppWithRedux = React.memo(() => {
                     </Typography>
                     <Button color={'inherit'}>Login</Button>
                 </Toolbar>
+                {status === 'loading' && <LinearProgress color="secondary" />}
             </AppBar>
             <Container fixed>
                 <Grid container style={{padding: "20px"}}>
@@ -106,6 +120,7 @@ const AppWithRedux = React.memo(() => {
                                     <TodoList
                                         key={tl.id}
                                         id={tl.id}
+                                        entityStatus={tl.entityStatus}
                                         title={tl.title}
                                         tasks={taskForTodolist}
                                         addTask={addTask}
