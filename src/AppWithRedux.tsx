@@ -82,8 +82,7 @@ const AppWithRedux = React.memo(() => {
     const changeStatus = useCallback(function (taskId: string, status: TaskStatuses, todolistId: string) {
         dispatch(updateTaskStatusTC(taskId, status, todolistId))
 
-        // const action = changeTaskStatusAC(id, status, todolistId);
-        // dispatch(action);
+
     }, []);
 
     const changeTaskTitle = useCallback((taskID: string, newTitle: string, todolistID: string) => {
